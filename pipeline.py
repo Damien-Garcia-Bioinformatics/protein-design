@@ -10,18 +10,22 @@
 # Modélisation moléculaire d'au moins un séquence.
 # Utiliser un générateur de nom aléatoire pour paralléliser sur des fichiers différents (forsa)
 
-# Références à l'article de Forsa
-# Article : A substitution matrix for strucral alphabet based on structural alignment of homolgous proteins ans tis applications.
 
+# ------------------------------ Library imports ----------------------------- #
 
 
 import os                               # File handling
-import subprocess                       # Forsa algorithm exection
+import sys                              # Command line arguments
+
+import subprocess                       # Forsa and dssp algorithms execution
 import random                           # Sequence generation and mutation rate
 import pandas as pd                     # Dataframes
 from matplotlib import pyplot as plt    # Plot generation
-from joblib import Parallel, delayed    # Parallelization process
+
 import uuid                             # Unique file name for parallelization process
+from joblib import Parallel, delayed    # Parallelization process
+from tqdm import tqdm                   # Progress Bar
+from tqdm_joblib import tqdm_joblib     # Progress Bar for parallel execution
 
 
 # ------------------------------- Miscellaneous ------------------------------ #
@@ -37,31 +41,10 @@ def header():
     print("                                         |___/        \n")
 
 
-# Code by 'Greenstick':
-# https://stackoverflow.com/questions/3173320/text-progress-bar-in-terminal-with-block-characters
-# Init =     printProgressBar(0, total, prefix='Progress:', suffix='Complete', length=50)
-# In loop =  printProgressBar(i+1, pool, prefix='Progress:', suffix='Complete', length=50)
-def printProgressBar(iteration, total, prefix='', suffix='', decimals=1,
-                     length=100, fill='█', printEnd="\r"):
-    """
-    Call in a loop to create terminal progress bar
-    @params:
-        iteration   - Required  : current iteration (Int)
-        total       - Required  : total iterations (Int)
-        prefix      - Optional  : prefix string (Str)
-        suffix      - Optional  : suffix string (Str)
-        decimals    - Optional  : positive number of decimals in percent complete (Int)
-        length      - Optional  : character length of bar (Int)
-        fill        - Optional  : bar fill character (Str)
-        printEnd    - Optional  : end character (e.g. "\r", "\r\n") (Str)
-    """
-    percent = ("{0:." + str(decimals) + "f}").format(100 * (iteration / float(total)))
-    filledLength = int(length * iteration // total)
-    bar = fill * filledLength + ' ' * (length - filledLength)
-    print(f'\r{prefix} |{bar}| {percent}% {suffix}', end = printEnd)
-    # Print New Line on Complete
-    if iteration == total: 
-        print()
+# Flatens list of lists to list
+# Parallel processing appends batches for optimization purposes? --> Needs investigating (°_°)'
+def flatten_list(list):
+    return [item for sublist in list for item in sublist]
 
 
 # ---------------------------- Sequence generation --------------------------- #
@@ -111,7 +94,18 @@ def write_csv(path, batch):
     batch.to_csv(path, sep=';', encoding='utf-8', index=False)
 
 
+# ------------------------------ Initialization ------------------------------ #
+
+
+def initialization():
+    return 0
+
+
 # --------------------------- Histogram generation --------------------------- #
+
+
+def hist_init():
+    return 0
 
 
 def hist_generation(runIter, scores):
@@ -156,74 +150,93 @@ def hist_diff(pool, scores1, scores2):
 # ---------------------------- Initial generation ---------------------------- #
 
 
-def initial_generation(path, runIter, pool, initRun):
-    allScores = []
-    # Generation and scoring of sequences until a valid pool of 100 sequences is obtained
-    print("Generation of pool of sequences:")
-    printProgressBar(0, pool, prefix='Progress:', suffix='Complete', length=50)
-    for i in range(pool):
-        seq = ""
-        zScore = 0.0
-        while zScore < 3.0:      # Initial sequence validation threshold is set to 3 
-            # Sequence generation
-            seq = sequence_generator(length)
-            write_sequence(seq, path['tempSeq'])
-            
-            # Forsa algorithm execution
-            subprocess.run(
-                f"./{path['forsa']} {path['tempSeq']} {path['pbseq']} -5 > {path['tempRes']}",
-                shell=True
-            )
-
-            # Data Handling
-            zScore = extract_zscore(path['tempRes'])
-            allScores.append(zScore)
+def init_generation():
+    seq = ""
+    zScore = 0.0
+    id = uuid.uuid4()
+    while zScore < 3.0:      # Initial sequence validation threshold is set to 3
+        # Sequence generation
+        seq = sequence_generator(length)
+        write_sequence(seq, f"temp/{id}.aaseq")
         
-        initRun.loc[len(initRun.index)] = [zScore, seq]
-        printProgressBar(i+1, pool, prefix='Progress:', suffix='Complete', length=50)
+        # Forsa algorithm execution
+        subprocess.run(
+            f"./{path['forsa']} temp/{id}.aaseq {path['pbseq']} -5 > temp/{id}.forsa",
+            shell=True
+        )
+        zScore = extract_zscore(f"temp/{id}.forsa")
+    
+    # Cleaning temporary files
+    os.remove(f"temp/{id}.aaseq")
+    os.remove(f"temp/{id}.forsa")
 
-    print("\nPool selected from generation:\n")
+    return zScore, seq
+
+
+def init_process(pool, initRun):
+    # Parallelized generation and scoring of sequences until a valid pool of 100 sequences is obtained
+    print("Generation of pool of sequences:")
+    data = []
+    with tqdm_joblib(desc="", total=pool) as progress_bar:
+        data += Parallel(n_jobs=-1)(delayed(init_generation)() for i in range(pool))
+    
+    for result in data:
+        initRun.loc[len(initRun.index)] = [result[0], result[1]]
+    
+    print("\nTop10 scoring sequences from generation:")
     print(initRun.sort_values(by=["zScore"], ascending=False))
     
-    print(f"\nTotal number of sequence generated = {len(allScores)}\n")
-
-    hist_generation(runIter, allScores)
+    # hist_generation(runIter, allScores)
     write_csv("results/gen0_data.csv", initRun)
 
 
 # ----------------------------- Second generation ---------------------------- #
 
 
-def following_generation(path, runIter, sequences, newRun):
+def following_generation(seq, seqN, nbCopies):
+    id = uuid.uuid4()
+    write_sequence(seq, f"temp/{id}.aaseq")
+    subprocess.run(
+        f"./{path['forsa']} temp/{id}.aaseq {path['pbseq']} -5 > temp/{id}.forsa",
+        shell=True
+    )
+    oriSeq = seqN//nbCopies
+    zScore = extract_zscore(f"temp/{id}.forsa")
+
+    os.remove(f"temp/{id}.aaseq")
+    os.remove(f"temp/{id}.forsa")
+    
+    return oriSeq, zScore, seq
+
+
+def following_processes(runIter, sequences, newRun):
     batch = []
     nbCopies = 100
+
     # Mutating sequences
     print("\nMutating sequences:")
-    printProgressBar(0, len(sequences), prefix='Progress:', suffix='Complete', length=50)
-    for i in range(len(sequences)):
+    for i in tqdm(range(len(sequences))):
         # Generation of 1000 mutated copies for each sequence
-        for j in range(nbCopies):
-            batch.append(mutate(sequences[i]))
-        printProgressBar(i+1, len(sequences), prefix='Progress:', suffix='Complete', length=50)
+        batch.append(Parallel(n_jobs=-1)(delayed(mutate)(sequences[i]) for j in range(nbCopies)))
+    batch = flatten_list(batch)
 
     # Forsa algorithm execution
     print("\nForsa zScore calculation:")
-    printProgressBar(0, len(batch), prefix='Progress:', suffix='Complete', length=50)
-    for i in range(len(batch)):
-        write_sequence(batch[i], path['tempSeq'])
-        subprocess.run(
-            f"./{path['forsa']} {path['tempSeq']} {path['pbseq']} -5 > {path['tempRes']}",
-            shell=True
-        )
-        newRun.loc[len(newRun.index)] = [i//nbCopies, extract_zscore(path['tempRes']), batch[i]]
-        printProgressBar(i+1, len(batch), prefix='Progress:', suffix='Complete', length=50)
+    data = []
+    with tqdm_joblib(desc="", total=len(batch)) as progress_bar:
+        data.append(Parallel(n_jobs=-1)(delayed(following_generation)(batch[i], i, nbCopies) for i in range(len(batch))))
+    data = flatten_list(data)
+
+    for result in data:
+        newRun.loc[len(newRun.index)] = [result[0], result[1], result[2]]
     
     hist_generation(runIter, newRun)
     newRun = newRun.nlargest(100, 'zScore')
+    # print(newRun)
     write_csv(f"results/gen{runIter}_data.csv", newRun)
+
+    return newRun
     
-
-
 
 # ----------------------------------- Main ----------------------------------- #
 
@@ -233,20 +246,16 @@ if __name__ == "__main__":
     path = {
         "forsa": "forsa/forsa_global",
         "pbseq": "2xiw.pb",
-        "tempSeq": "temp_seq.txt",
-        "tempRes": "temp_res.forsa",
-        "temp": "temp",
-        "results": "results"
     }
 
     # Checking for files and directories existence
     if not os.path.exists(path['forsa'] or not os.path.exists(path['pbseq'])):
         print("[Err1] Missing required files to execute generation.")
         exit(1)
-    if not os.path.exists(path['temp']):
-        os.makedirs(path['temp'])
-    if not os.path.exists(path['results']):
-        os.makedirs(path['results'])
+    if not os.path.exists("temp"):
+        os.makedirs("temp")
+    if not os.path.exists("results"):
+        os.makedirs("results")
 
     # Data types storing generated sequences and corresponding zScores
     initRun = pd.DataFrame({"zScore": pd.Series(dtype='float'),
@@ -257,7 +266,7 @@ if __name__ == "__main__":
 
     # Generation constants
     length = 64         # Len of Sac7d protein used as reference for sequence generation.
-    pool = 5            # Set to 100 but can be lowered for testing purposes.
+    pool = 100          # Set to 100 but can be lowered for testing purposes.
     objective = 6.44    # zScore of reference for Sac7d 2XIW protein.
 
     # Print header
@@ -267,21 +276,20 @@ if __name__ == "__main__":
     runIter, bestScore = 0, 0
     while runIter < 3 or bestScore < objective :
         if runIter == 0:
-            initial_generation(path, runIter, pool, initRun)
+            init_process(pool, initRun)
         elif runIter == 1:
             sequences = initRun['sequence'].to_list()
-            following_generation(path, runIter, sequences, newRun)
+            newRun = following_processes(runIter, sequences, newRun)
             bestScore = max(initRun['zScore'].to_list())
+            print(newRun)
         else:
             sequences = newRun['sequence'].to_list()
-            following_generation(path, runIter, sequences, newRun)
+            newRun = following_processes(runIter, sequences, newRun)
             bestScore = max(newRun['zScore'].to_list())
+            print(newRun)
         print(bestScore)
         runIter += 1
-
-
-    # hist_diff(pool, initRun, newRun)
-
-    # Removing temporary files
-    os.remove(path['tempRes'])
-    os.remove(path['tempSeq'])
+    
+    # Check if 'temp' directory is empty, if so, removes it
+    if len(os.listdir('temp')) == 0:
+        os.rmdir('temp')
