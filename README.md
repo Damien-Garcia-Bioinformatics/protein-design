@@ -16,8 +16,25 @@ git clone https://github.com/Damien-Garcia-Bioinformatics/protein-design.git
 pip install -r requirements.txt
 ```
 
-### Full requirements list
-
+#### Full requirements list
+```
+contourpy==1.0.7
+cycler==0.11.0
+fonttools==4.38.0
+joblib==1.2.0
+kiwisolver==1.4.4
+matplotlib==3.6.3
+numpy==1.24.2
+packaging==23.0
+pandas==1.5.3
+Pillow==9.4.0
+pyparsing==3.0.9
+python-dateutil==2.8.2
+pytz==2022.7.1
+six==1.16.0
+tqdm==4.64.1
+tqdm-joblib==0.0.2
+```
 
 ### Usage
 
