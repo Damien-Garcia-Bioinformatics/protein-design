@@ -60,12 +60,16 @@ See ```LICENSE``` for more information.
 ## Acknowledgments
 - **FORSA:**
     - Use of a structural alphabet to find compatible folds for amino acid sequences.
+    
     *Swapnil Mahajan, Alexandre G. de Brevern, Yves-Henri Sanejouand, Narayanaswamy Srinivasan, Bernard Offmann*
 
 - **Protein Blocks:**
     - A substitution matrix for structural alphabet based on structural alignment of homologous proteins and its applications
+    
     *Manoj Tyagi, Venkataraman S. Gowri, Narayanaswamy Srinivasan, Alexandre G. de Brevern, Bernard Offmann*.
+    
     - Extension of a local backbone description using a structural alphabet: A new approach to the sequence-structure relationship
+    
     *Alexandre G. de Brevern, Hélène Valadié, Serge Hazout, Catherine Etchebest*
 
 - **DSSP:**

@@ -98,6 +98,7 @@ def write_csv(path, batch):
 
 
 def initialization():
+
     return 0
 
 
@@ -245,8 +246,20 @@ if __name__ == "__main__":
     # Dictionary structure containing all necessary paths
     path = {
         "forsa": "forsa/forsa_global",
+        "dssp": "dssp/dssp-2.0.4-linux-i386",
+        "dssp_sep": "dssp/dssp_separator.pl",
+        "dssp2pb": "dssp/dssp_to_pb_tor_rmsda.pl",
+        "pdb2aa": "dssp/pdb_to_aa.pl",
+
         "pbseq": "2xiw.pb",
     }
+
+    # # Checking command line arguments
+    # doRunInit = False
+    # for args in sys.argv:
+    #     if args.endswith('.pb'):
+    #         doRunInit = True
+    #         path['pbseq'] = args
 
     # Checking for files and directories existence
     if not os.path.exists(path['forsa'] or not os.path.exists(path['pbseq'])):
