@@ -123,9 +123,9 @@ def hist_generation(runIter, scores):
     plt.hist(x, density=True, bins=100)
     plt.xlabel('zScore')
     plt.ylabel('Percentage')
-
+    plt.axvline(3.0, color='r', linestyle='--', label='...')
     plt.title(f'Generation{runIter} zScore distribution')
-    plt.savefig(f'gen{runIter}.png', dpi='figure', format='png')
+    plt.savefig(f'results/gen{runIter}.png', dpi='figure', format='png')
     plt.clf()
 
 
@@ -188,7 +188,7 @@ def initial_generation(path, runIter, pool, initRun):
     print(f"\nTotal number of sequence generated = {len(allScores)}\n")
 
     hist_generation(runIter, allScores)
-    write_csv("gen0_data.csv", initRun)
+    write_csv("results/gen0_data.csv", initRun)
 
 
 # ----------------------------- Second generation ---------------------------- #
@@ -220,7 +220,7 @@ def following_generation(path, runIter, sequences, newRun):
     
     hist_generation(runIter, newRun)
     newRun = newRun.nlargest(100, 'zScore')
-    write_csv(f"gen{runIter}_data.csv", newRun)
+    write_csv(f"results/gen{runIter}_data.csv", newRun)
     
 
 
@@ -236,17 +236,17 @@ if __name__ == "__main__":
         "tempSeq": "temp_seq.txt",
         "tempRes": "temp_res.forsa",
         "temp": "temp",
-        "result": "result"
+        "results": "results"
     }
 
     # Checking for files and directories existence
     if not os.path.exists(path['forsa'] or not os.path.exists(path['pbseq'])):
         print("[Err1] Missing required files to execute generation.")
         exit(1)
-    if not os.path.isdir(path['temp']):
-        os.makedirs('temp')
-    if not os.path.isdir(path['result']):
-        os.makedirs('path')
+    if not os.path.exists(path['temp']):
+        os.makedirs(path['temp'])
+    if not os.path.exists(path['results']):
+        os.makedirs(path['results'])
 
     # Data types storing generated sequences and corresponding zScores
     initRun = pd.DataFrame({"zScore": pd.Series(dtype='float'),
