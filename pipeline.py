@@ -41,6 +41,10 @@ def header():
     print("                                         |___/        \n")
 
 
+def help():
+    print("Help function")
+
+
 # Flatens list of lists to list
 # Parallel processing appends batches for optimization purposes? --> Needs investigating (°_°)'
 def flatten_list(list):
@@ -97,9 +101,23 @@ def write_csv(path, batch):
 # ------------------------------ Initialization ------------------------------ #
 
 
-def initialization():
-
-    return 0
+def initialization(path, pdbFile):
+    baseName = os.path.basename(baseName)
+    # Running PDB to AA program
+    subprocess.run(f"./{path['pdb2aa']} {pdbFile} {baseName}.aaseq",
+                   shell=True)
+    
+    # Running DSSP program
+    subprocess.run(f"./{path['dssp']} -i {pdbFile} -o {baseName}.dssp",
+                   shell=True)
+    
+    # Running DSSP_SEPARATOR program
+    subprocess.run(f"perl {path['dssp_sep']} {baseName}.dssp .",
+                   shell=True)
+    
+    # Running DSSP to PB program
+    subprocess.run(f"perl {path['dssp2pb']} {baseName}_A.dssp",
+                   shell=True)
 
 
 # --------------------------- Histogram generation --------------------------- #
