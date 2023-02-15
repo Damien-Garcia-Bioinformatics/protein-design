@@ -25,7 +25,7 @@ unless(open(FIN,"<","$ARGV[0]"))
 	exit;
 }
 
-print"Splitting the dssp file....\n";
+# print"Splitting the dssp file....\n";
 @dssp_dump=<FIN>;
 $full_variable=join("",@dssp_dump);
 @parts=split(/(\n.+#.+\n)/,$full_variable);

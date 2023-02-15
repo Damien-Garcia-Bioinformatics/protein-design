@@ -102,57 +102,6 @@ def write_csv(path, batch):
     batch.to_csv(path, sep=';', encoding='utf-8', index=False)
 
 
-# ------------------------------ Initialization ------------------------------ #
-
-
-def initialization(path_progs, basename):
-    print("Initialization process")
-
-    # Running PDB to AA program
-    print("Running PDB to AA program")
-    subprocess.run(f"perl {path_progs['pdb2aa']} {basename}.pdb ./results_{basename}/data/",
-                   shell=True)
-    length = 0
-    with open(f"results_{basename}/data/{basename}.pdb.aa", "r+") as file:
-        seq = file.read()
-        file.seek(0)
-        file.write(f">{basename}\n{seq}")
-        length = len(seq)
-    
-    # Running DSSP program
-    print("Running DSSP program")
-    subprocess.run(f"./{path_progs['dssp']} -i {basename}.pdb -o ./results_{basename}/data/{basename}.dssp",
-                   shell=True)
-    
-    # Running DSSP_SEPARATOR program
-    print("Running DSSP_SEPARATOR program")
-    subprocess.run(f"perl {path_progs['dssp_sep']} results_{basename}/data/{basename}.dssp ./results_{basename}/data/",
-                   shell=True)
-    
-    # Running DSSP to PB program
-    print("Running DSSP to PB program")
-    subprocess.run(f"perl {path_progs['dssp2pb']} results_{basename}/data/{basename}_A.dssp ./results_{basename}/data/",
-                   shell=True)
-    with open(f"results_{basename}/data/{basename}_A.dssp.pb", "r+") as file:
-        seq = file.read()
-        file.seek(0)
-        file.write(f">{basename}\n{seq}")
-
-    # Running FORSA
-    print("Running FORSA")
-    subprocess.run(f"./{path_progs['forsa']} results_{basename}/data/{basename}.pdb.aa results_{basename}/data/{basename}_A.dssp.pb -5 > results_{basename}/data/{basename}.forsa",
-                   shell=True)
-    objective = extract_zscore(f"results_{basename}/data/{basename}.forsa")
-
-    print("Selected parameters are:")
-    print(f"  - Batch size = 100")
-    print(f"  - Seqeuences length = {length}")
-    print(f"  - Selection threshold = {objective/2}")
-    print(f"  - zScore objective = {objective}\n")
-
-    return length, objective
-
-
 # --------------------------- Histogram generation --------------------------- #
 
 
@@ -171,7 +120,7 @@ def hist_generation(runIter, scores):
     plt.ylabel('Percentage')
     plt.axvline(3.0, color='r', linestyle='--', label='...')
     plt.title(f'Generation{runIter} zScore distribution')
-    plt.savefig(f'results/gen{runIter}.png', dpi='figure', format='png')
+    plt.savefig(f'results_{basename}/gen{runIter}.png', dpi='figure', format='png')
     plt.clf()
 
 
@@ -199,6 +148,50 @@ def hist_diff(pool, scores1, scores2):
 ### WIP ###
 
 
+# ------------------------------ Initialization ------------------------------ #
+
+
+def initialization(path_progs, basename):
+    # Running PDB to AA program
+    subprocess.run(f"perl {path_progs['pdb2aa']} {basename}.pdb ./results_{basename}/data/",
+                   shell=True)
+    length = 0
+    with open(f"results_{basename}/data/{basename}.pdb.aa", "r+") as file:
+        seq = file.read()
+        file.seek(0)
+        file.write(f">{basename}\n{seq}")
+        length = len(seq)
+    
+    # Running DSSP program
+    subprocess.run(f"./{path_progs['dssp']} -i {basename}.pdb -o ./results_{basename}/data/{basename}.dssp",
+                   shell=True)
+    
+    # Running DSSP_SEPARATOR program
+    subprocess.run(f"perl {path_progs['dssp_sep']} results_{basename}/data/{basename}.dssp ./results_{basename}/data/",
+                   shell=True)
+    
+    # Running DSSP to PB program
+    subprocess.run(f"perl {path_progs['dssp2pb']} results_{basename}/data/{basename}_A.dssp ./results_{basename}/data/",
+                   shell=True)
+    with open(f"results_{basename}/data/{basename}_A.dssp.pb", "r+") as file:
+        seq = file.read()
+        file.seek(0)
+        file.write(f">{basename}\n{seq}")
+
+    # Running FORSA
+    subprocess.run(f"./{path_progs['forsa']} results_{basename}/data/{basename}.pdb.aa results_{basename}/data/{basename}_A.dssp.pb -5 > results_{basename}/data/{basename}.forsa",
+                   shell=True)
+    objective = extract_zscore(f"results_{basename}/data/{basename}.forsa")
+
+    print("Selected parameters are:")
+    print(f"  - Batch size = 100")
+    print(f"  - Seqeuences length = {length}")
+    print(f"  - Selection threshold = {objective/2}")
+    print(f"  - zScore objective = {objective}\n")
+
+    return length, objective
+
+
 # ---------------------------- Initial generation ---------------------------- #
 
 
@@ -215,7 +208,7 @@ def init_generation(threshold, length):
         
         # Forsa algorithm execution
         subprocess.run(
-            f"./{path_progs['forsa']} results_{basename}/temp/{id}.aaseq results_{basename}/data/{basename}.dssp.pb -5 > results_{basename}/temp/{id}.forsa",
+            f"./{path_progs['forsa']} results_{basename}/temp/{id}.aaseq results_{basename}/data/{basename}_A.dssp.pb -5 > results_{basename}/temp/{id}.forsa",
             shell=True
         )
         zScore = extract_zscore(f"results_{basename}/temp/{id}.forsa")
@@ -242,7 +235,7 @@ def init_process(pool, initRun, threshold, length):
     print(initRun.sort_values(by=["zScore"], ascending=False))
     
     # hist_generation(runIter, allScores)
-    write_csv("results/gen0_data.csv", initRun)
+    write_csv(f"results_{basename}/gen0_data.csv", initRun)
 
 
 # ----------------------------- Second generation ---------------------------- #
@@ -254,7 +247,7 @@ def following_generation(seq, seqN, nbCopies):
     id = uuid.uuid4()
     write_sequence(seq, f"results_{basename}/temp/{id}.aaseq")
     subprocess.run(
-        f"./{path_progs['forsa']} results_{basename}/temp/{id}.aaseq results_{basename}/data/{basename}.dssp.pb -5 > results_{basename}/temp/{id}.forsa",
+        f"./{path_progs['forsa']} results_{basename}/temp/{id}.aaseq results_{basename}/data/{basename}_A.dssp.pb -5 > results_{basename}/temp/{id}.forsa",
         shell=True
     )
     oriSeq = seqN//nbCopies
@@ -291,7 +284,7 @@ def following_processes(runIter, sequences, newRun):
     hist_generation(runIter, newRun)
     newRun = newRun.nlargest(100, 'zScore')
     # print(newRun)
-    write_csv(f"results/gen{runIter}_data.csv", newRun)
+    write_csv(f"results_{basename}/gen{runIter}_data.csv", newRun)
 
     return newRun
     
@@ -319,6 +312,11 @@ if __name__ == "__main__":
         "dssp2pb":  "dssp/dssp_to_pb_tor_rmsda.pl",
         "pdb2aa":   "dssp/pdb_to_aa.pl",
     }
+    # dir_path = {
+    #     "data": f"results_{basename}/data/",
+    #     "temp": f"results_{basename}/temp/",
+    # }
+
     # path_files = {
     #     "pdb":   f"{basename}.pdb",
     #     "aaseq": f"results_{basename}/data/{basename}.pdb.aa",
@@ -373,7 +371,3 @@ if __name__ == "__main__":
             print(newRun)
         print(bestScore)
         runIter += 1
-    
-    # Check if 'temp' directory is empty, if so, removes it
-    if len(os.listdir('temp')) == 0:
-        os.rmdir('temp')
