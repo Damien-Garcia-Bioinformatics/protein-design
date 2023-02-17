@@ -135,6 +135,7 @@ def hist_generation(runIter, scores, bestScore):
     plt.ylabel('Percentage')
     if bestScore != 0:
         plt.axvline(bestScore, color='r', linestyle='--', label='Highest scoring sequence of previous cycle')
+        plt.legend()
     plt.title(f'Generation{runIter} zScore distribution')
     plt.savefig(f'results_{basename}/gen{runIter}.png', dpi='figure', format='png')
     plt.clf()
@@ -366,6 +367,6 @@ if __name__ == "__main__":
     elapsed = end - start
     
     print("\nScript execution results:")
-    print(f"  - Total number of cycles   = {runIter}")
-    print(f"  - Script execution time    = {round(elapsed, 2)}")
-    print(f"  - Highest scoring sequence = {bestScore}")
+    print(f"  - Total number of cycles    = {runIter}")
+    print(f"  - Script execution time (s) = {round(elapsed, 2)}")
+    print(f"  - Highest scoring sequence  = {bestScore}")
