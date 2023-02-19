@@ -54,19 +54,45 @@ from tqdm_joblib import tqdm_joblib     # Progress Bar for parallel execution
 # ------------------------------- Miscellaneous ------------------------------ #
 
 
-# Prints formated header to console output 
-def header():
-    print("     ____   ____    ____              _               ")
-    print("    |  _ \ | __ )  |  _ \   ___  ___ (_)  __ _  _ __  ")
-    print("    | |_) ||  _ \  | | | | / _ \/ __|| | / _` || '_ \ ")
-    print("    |  __/ | |_) | | |_| ||  __/\__ \| || (_| || | | |")
-    print("    |_|    |____/  |____/  \___||___/|_| \__, ||_| |_|")
-    print("                                         |___/        \n")
+def print_header():
+    print('  ╔══════════════════════════════════════════════════════════════════════╗')
+    print('  ║  ██████╗ ██████╗     ██████╗ ███████╗███████╗██╗ ██████╗ ███╗   ██╗  ║')
+    print('  ║  ██╔══██╗██╔══██╗    ██╔══██╗██╔════╝██╔════╝██║██╔════╝ ████╗  ██║  ║')
+    print('  ║  ██████╔╝██████╔╝    ██║  ██║█████╗  ███████╗██║██║  ███╗██╔██╗ ██║  ║')
+    print('  ║  ██╔═══╝ ██╔══██╗    ██║  ██║██╔══╝  ╚════██║██║██║   ██║██║╚██╗██║  ║')
+    print('  ║  ██║     ██████╔╝    ██████╔╝███████╗███████║██║╚██████╔╝██║ ╚████║  ║')
+    print('  ║  ╚═╝     ╚═════╝     ╚═════╝ ╚══════╝╚══════╝╚═╝ ╚═════╝ ╚═╝  ╚═══╝  ║')
+    print('  ╚══════════════════════════════════════════════════════════════════════╝\n')
+                                                                  
+
+def print_help():
+    print('  ╔══════════════════════════════════════════════════════════════════════╗')
+    print('  ║  Use : "./pipeline [pathToFile]"                                     ║')
+    print('  ║        with [pathToFile] a PDB file containing one chain you wish    ║')
+    print('  ║        to generate potential homologues of.                          ║')
+    print('  ║                                                                      ║')
+    print('  ║  For more informations, please visit:                                ║')
+    print('  ║  https://github.com/Damien-Garcia-Bioinformatics/protein-design/     ║')
+    print('  ╚══════════════════════════════════════════════════════════════════════╝\n')
 
 
-def help():
-    print("Help function")
+def print_parameters(length, objective):
+    print(f'  ╔══════════════════════════════════════════════════════════════════════╗')
+    print(f'  ║  Selected parameters:                                                ║')
+    print(f'  ║    - Batch size          = 100                                       ║')
+    print(f'  ║    - sequences length    = {str(length):<42}║')
+    print(f'  ║    - Selection threshold = {str(objective/2):<42}║')
+    print(f'  ║    - Z-score objective   = {str(objective):<42}║')
+    print(f'  ╚══════════════════════════════════════════════════════════════════════╝\n')
 
+
+def print_results(runIter, elapsed, bestScore):
+    print(f'\n  ╔══════════════════════════════════════════════════════════════════════╗')
+    print(f'  ║  Script execution results:                                           ║')
+    print(f'  ║    - Total number of cycles    = {str(runIter):<36}║')
+    print(f'  ║    - Script execution time (s) = {str(round(elapsed, 2)):<36}║')
+    print(f'  ║    - Highest scoring sequence  = {str(bestScore):<36}║')
+    print(f'  ╚══════════════════════════════════════════════════════════════════════╝\n')
 
 # Flatens list of lists to list
 # Parallel processing appends batches for optimization purposes? --> Needs investigating (°_°)'
@@ -176,11 +202,7 @@ def initialization(path, basename):
                    shell=True)
     objective = extract_zscore(f"{path['data']}/{basename}.forsa")
 
-    print("Selected parameters are:")
-    print(f"  - Batch size = 100")
-    print(f"  - Seqeuences length = {length}")
-    print(f"  - Selection threshold = {objective/2}")
-    print(f"  - zScore objective = {objective}\n")
+    print_parameters(length, objective)
 
     return length, objective
 
@@ -292,11 +314,14 @@ if __name__ == "__main__":
     # Start timer
     start = time.time()
 
+    # Print header
+    print_header()
+
     # Checking command line arguments
     # Structure of interest should be one chain only or the first chain of the pdb file.
     basename = ""
     if len(sys.argv) != 2 or not sys.argv[1].endswith(".pdb"):
-        help()
+        print_help()
         exit(1)
     else:
         basename = os.path.basename(sys.argv[1])[:-4]
@@ -333,9 +358,6 @@ if __name__ == "__main__":
     newRun  = pd.DataFrame({"oriSeq": pd.Series(dtype='int'),
                             "zScore": pd.Series(dtype='float'),
                             "sequence": pd.Series(dtype='str')})
-    
-    # Print header
-    header()
 
     # Generation constants
     pool = 100
@@ -360,13 +382,11 @@ if __name__ == "__main__":
             print(newRun)
         runIter += 1
     
-    os.rmdir(path['temp'])
+    if len(os.listdir(path['temp'])) == 0:
+        os.rmdir(path['temp'])
     
     # End timer
     end = time.time()
     elapsed = end - start
     
-    print("\nScript execution results:")
-    print(f"  - Total number of cycles    = {runIter}")
-    print(f"  - Script execution time (s) = {round(elapsed, 2)}")
-    print(f"  - Highest scoring sequence  = {bestScore}")
+    print_results(runIter, elapsed, bestScore)

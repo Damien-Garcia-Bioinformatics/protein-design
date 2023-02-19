@@ -39,13 +39,14 @@ tqdm-joblib==0.0.2
 
 ### Usage
 
+
 ### Roadmap
 - [x] Pipeline working with multiple cycles of mutation + scoring.
 - [x] Parallelize initial generation of sequences, mutation and scoring cycles.
-- [ ] Generate bar graphs for each generation cycle.
-- [ ] First section of generation to get automaticaly the .pbseq used for forsa calculations.
-- [ ] Command line arguments of fasta and pdb formats.
-- [ ] Improve Command Line Output to easily assess the pipeline state.
+- [x] Generate bar graphs for each generation cycle.
+- [x] First section of generation to get automaticaly the .pbseq used for forsa calculations.
+- [x] Command line arguments of pdb file.
+- [x] Improve Command Line Output to easily assess the pipeline state.
 
 ### License
 Distributed under the GNU GENERAL PUBLIC LICENSE (Version 3, 29 June 2007).
