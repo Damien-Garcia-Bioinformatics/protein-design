@@ -40,6 +40,7 @@ tqdm-joblib==0.0.2
 ### Usage
 To initiate the generation of potential homologues, use:
 ```python3 pipeline.py [pathToFile]```
+
 With the default parameters and test.pdb file, generation should only take minutes, even on low-end personal computer.
 
 
