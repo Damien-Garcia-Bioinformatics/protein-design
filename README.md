@@ -38,6 +38,9 @@ tqdm-joblib==0.0.2
 ```
 
 ### Usage
+To initiate the generation of potential homologues, use:
+```python3 pipeline.py [pathToFile]```
+With the default parameters and test.pdb file, generation should only take minutes, even on low-end personal computer.
 
 
 ### Roadmap
@@ -47,6 +50,7 @@ tqdm-joblib==0.0.2
 - [x] First section of generation to get automaticaly the .pbseq used for forsa calculations.
 - [x] Command line arguments of pdb file.
 - [x] Improve Command Line Output to easily assess the pipeline state.
+- [ ] Add a second Command Line Argument for the path where the results shoudl be written.
 
 ### License
 Distributed under the GNU GENERAL PUBLIC LICENSE (Version 3, 29 June 2007).
