@@ -59,6 +59,17 @@ With the default parameters and test.pdb file, generation should only take minut
 - [ ] Build application UI for local use. (PyQt seems the most used and cross-platform)
 - [ ] Set webserver for straightforward pipelines.
 
+? Precompile dssp perl files or transform them into C++ ?
+
+### New fonctionalities
+
+- [ ] Possibility to fix amino acid (The mutation cycles will not affect AA at a certain position)
+- [ ] Change alignment penality (Will need more cycles but convergence will explore more possibilites)
+- [ ] Cycles of mutation with local alignment on an interval (The rest of the structure imports less than the given region)
+- [ ] Comparative modelling with modeller for the N best candidates (Fast visualisation of resulting structures)
+- [ ] Conformation generation for best candidate
+- [ ] Sidechain optimisation with PULCHRA
+
 ### License
 Distributed under the GNU GENERAL PUBLIC LICENSE (Version 3, 29 June 2007).
 See ```LICENSE``` for more information.
