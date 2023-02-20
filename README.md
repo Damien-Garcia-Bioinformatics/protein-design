@@ -2,8 +2,11 @@
 Master's degree project aiming to design protein sequences folds using the "Protein Block" approach.
 
 ## About the project
+We aim to make the design of new sequences based on structural constraints easier by making Protein Blocks based sequence design available for all profiles, be it bioinformaticians that seek an additional tool to a pipeline or biologists and biochemists intereested in exploring ideas on their own before setting up bigger projects.
 
+The Protein Blocks philosophy is simple : a 3D structure can be summed up into fragments, that happens to be immuable between all the structures reavealed to this day. These fragments describe 5 amino acids at a time, and by reading the sequence, these structural fragments can be predicted. A certain sequence possesses a certain Protein Blocks profiles, and such profiles are comparable. Approaches of sequence alignments have been demonstrated to bear good results, which is less computational-heavy than a 3D structure generation and superposition.
 
+With our app, you can list a number of constraints for sequence generation, and upon a few cycles of mutation of the "best" sequences, you will get a set of new sequences corresponding to the structure you seek.
 
 ## Getting started
 
@@ -51,7 +54,10 @@ With the default parameters and test.pdb file, generation should only take minut
 - [x] First section of generation to get automaticaly the .pbseq used for forsa calculations.
 - [x] Command line arguments of pdb file.
 - [x] Improve Command Line Output to easily assess the pipeline state.
-- [ ] Add a second Command Line Argument for the path where the results shoudl be written.
+- [ ] Add a second Command Line Argument for the path where the results should be written.
+- [ ] Reforging in C++. (Either SWIG for function packaging or full reforge)
+- [ ] Build application UI for local use. (PyQt seems the most used and cross-platform)
+- [ ] Set webserver for straightforward pipelines.
 
 ### License
 Distributed under the GNU GENERAL PUBLIC LICENSE (Version 3, 29 June 2007).
