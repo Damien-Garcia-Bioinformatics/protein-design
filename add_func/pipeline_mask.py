@@ -71,9 +71,11 @@ def print_header():
 
 def print_help():
     print('  ╔══════════════════════════════════════════════════════════════════════╗')
-    print('  ║  Use : "./pipeline [pathToFile]"                                     ║')
+    print('  ║  Use : "./pipeline [pathToFile] [maskStart] [maskEnd] [maskStatus]"  ║')
     print('  ║        with [pathToFile] a PDB file containing one chain you wish    ║')
     print('  ║        to generate potential homologues of.                          ║')
+    print('  ║        Set the beginning and end of the mask with [maskS/E],         ║')
+    print('  ║        and whether to mutate all within [MaskStatus] = Y or w/o = N  ║')
     print('  ║                                                                      ║')
     print('  ║  For more informations, please visit:                                ║')
     print('  ║  https://github.com/Damien-Garcia-Bioinformatics/protein-design/     ║')
@@ -202,9 +204,9 @@ def initialization(path, basename):
         file.write(f">{basename}\n{seqpb}")
 
     # Running FORSA
-    subprocess.run(f"./{path['forsa']} {seqaa} {seqpb} -5 > {path['data']}/{basename}.forsa",
-                   shell=True)
-    objective = extract_zscore(f"{path['data']}/{basename}.forsa")
+    objective = subprocess.run(f"./{path['forsa']} {seqaa} {seqpb} -5 ",
+                   shell=True, capture_output=True,text=True).stdout.strip("\n")
+    #objective = extract_zscore(f"{path['data']}/{basename}.forsa")
 
     print_parameters(length, objective)
 
@@ -225,17 +227,17 @@ def init_generation(path, basename, threshold, length, seqpb):
         seqaa = sequence_generator(length)
         
         # Forsa algorithm execution
-        subprocess.run(
-            f"./{path['forsa']}  {seqaa} {seqpb} -5 > {path['temp']}/{id}.forsa",
-            shell=True
-        )
-        zScore = extract_zscore(f"{path['temp']}/{id}.forsa")
+        zScore = subprocess.run(
+            f"./{path['forsa']}  {seqaa} {seqpb} -5 ",
+            shell=True, capture_output=True,text=True).stdout.strip("\n")
+        
+        #zScore = extract_zscore(f"{path['temp']}/{id}.forsa")
     
     # Cleaning temporary files
-    os.remove(f"{path['temp']}/{id}.aaseq")
-    os.remove(f"{path['temp']}/{id}.forsa")
+    #os.remove(f"{path['temp']}/{id}.aaseq")
+    #os.remove(f"{path['temp']}/{id}.forsa")
 
-    return zScore, seq
+    return zScore, seqaa
 
 
 # First process of sequences generation
@@ -266,12 +268,12 @@ def init_process(path, basename, initRun, pool, threshold, length, bestScore, se
 def following_generation(path, basename, seqaa, seqN, nbCopies, seqpb):
     id = uuid.uuid4()
     #write_sequence(seq, f"{path['temp']}/{id}.aaseq")
-    subprocess.run(
-        f"./{path['forsa']} {seqaa} {seqpb} -5 > {path['temp']}/{id}.forsa",
-        shell=True
-    )
+    zScore = subprocess.run(
+        f"./{path['forsa']} {seqaa} {seqpb} -5 ",
+        shell=True, capture_output=True,text=True).stdout.strip("\n")
+    
     oriSeq = seqN//nbCopies
-    zScore = extract_zscore(f"{path['temp']}/{id}.forsa")
+    #zScore = extract_zscore(f"{path['temp']}/{id}.forsa")
 
     #os.remove(f"{path['temp']}/{id}.aaseq")
     #os.remove(f"{path['temp']}/{id}.forsa")
@@ -323,15 +325,18 @@ if __name__ == "__main__":
     # Checking command line arguments
     # Structure of interest should be one chain only or the first chain of the pdb file.
     basename = ""
-    if len(sys.argv) != 2 or not sys.argv[1].endswith(".pdb"):
+    if len(sys.argv) != 5 or not sys.argv[1].endswith(".pdb"):
         print_help()
         exit(1)
     else:
         basename = os.path.basename(sys.argv[1])[:-4]
+        mask_start = sys.argv[2]
+        mask_end = sys.argv[3]
+        mask_status = sys.argv[4]
 
     # Dictionary structures containing all necessary paths
     path = {
-        "forsa": "forsa_parameter/forsa_global",
+        "forsa": "add_func/forsa_global",
         "dssp": "dssp/dssp-2.0.4-linux-i386",
         "dssp_sep": "dssp/dssp_separator.pl",
         "dssp2pb": "dssp/dssp_to_pb_tor_rmsda.pl",
