@@ -45,6 +45,11 @@ from joblib import Parallel, delayed    # Parallelization process
 from tqdm import tqdm                   # Progress Bar
 from tqdm_joblib import tqdm_joblib     # Progress Bar for parallel execution
 
+#flag
+from PyQt6.QtWidgets import QApplication
+import Interface                        # Qt-based User Interface
+from Interface import Window            # Custom Layout defined in another file
+
 #import forsa                            #SWIG module from c
 
 #import pipeline                         #dont have to redefine functions
@@ -141,6 +146,13 @@ def sequence_mutout(seqaa, start, end):
 
 # ------------------------------- File Handling ------------------------------ #
 
+# Read the parameter file wrote by PyQt UI.
+def read_param():
+    list_param = []
+    with open("param.txt", "r") as param :
+        for elem in param:
+            list_param.append(elem)
+    return list_param[0], list_param[1], list_param[2], list_param[3]
 
 # Write sequence in temporary file to feed forsa algorithm.
 def write_sequence(seq, path):
@@ -307,7 +319,7 @@ def following_processes(path, basename, newRun, runIter, sequences, bestScore, s
     batch = flatten_list(batch)
 
     if maskio == "N" :
-    print("\nMutating sequences:")
+        print("\nMutating sequences:")
     for i in tqdm(range(len(sequences))):
         # Generation of nbCopies mutated copies for each sequence
         batch.append(Parallel(n_jobs=-1)(delayed(sequence_mutout)(sequences[i], start, end) for j in range(nbCopies)))
@@ -336,6 +348,14 @@ def following_processes(path, basename, newRun, runIter, sequences, bestScore, s
 # ---------------------------------------------------------------------------- #
 
 if __name__ == "__main__":
+
+    #show UI
+    app = QApplication(sys.argv)
+    window = Window()
+    window.show()
+    i = input()
+ 
+
     # Start timer
     start = time.time()
 
@@ -344,15 +364,14 @@ if __name__ == "__main__":
 
     # Checking command line arguments
     # Structure of interest should be one chain only or the first chain of the pdb file.
-    basename = ""
-    if len(sys.argv) != 5 or not sys.argv[1].endswith(".pdb"):
+
+    basename_init, mask_start, mask_end, mask_status = read_param()
+
+    if not basename_init.endswith(".pdb"):
         print_help()
         exit(1)
-    else:
-        basename = os.path.basename(sys.argv[1])[:-4]
-        mask_start = sys.argv[2]
-        mask_end = sys.argv[3]
-        mask_status = sys.argv[4]
+    else :
+        basename = basename_init[:-4]
 
     # Dictionary structures containing all necessary paths
     path = {
@@ -422,3 +441,5 @@ if __name__ == "__main__":
     elapsed = end - start
     
     print_results(runIter, elapsed, bestScore)
+
+    sys.exit(app.exec())
