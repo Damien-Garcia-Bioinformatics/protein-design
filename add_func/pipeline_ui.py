@@ -150,9 +150,10 @@ def sequence_mutout(seqaa, start, end):
 def read_param():
     list_param = []
     with open("param.txt", "r") as param :
-        for elem in param:
-            list_param.append(elem)
-    return list_param[0], list_param[1], list_param[2], list_param[3]
+        for line in param :
+            list_param = line.split()
+    print(list_param)
+    return list_param[0], int(list_param[1]), int(list_param[2]), list_param[3]
 
 # Write sequence in temporary file to feed forsa algorithm.
 def write_sequence(seq, path):
@@ -226,8 +227,9 @@ def initialization(path, basename):
         file.write(f">{basename}\n{seqpb}")
 
     # Running FORSA
-    objective = subprocess.run(f"./{path['forsa']} {seqaa} {seqpb} -5 ",
-                   shell=True, capture_output=True,text=True).stdout.strip("\n")
+    objective = 3
+    print(float(subprocess.run(f"./{path['forsa']}", [seqaa,seqpb,-5],
+                    capture_output=True,text=True).stdout.strip("\n")))
     #objective = extract_zscore(f"{path['data']}/{basename}.forsa")
 
     print_parameters(length, objective)
@@ -411,6 +413,7 @@ if __name__ == "__main__":
     seqaa = ""
     pool = 100
     length, objective, seqpb, seqaa = initialization(path, basename)
+    print(length,objective,seqpb,seqaa, basename)
     threshold = objective/2
     if len(seqaa) < mask_end or mask_start > mask_end or len(seqaa) < mask_start or mask_start < 0 or mask_end < 0:
         print_help2()
@@ -419,16 +422,16 @@ if __name__ == "__main__":
     runIter, bestScore = 0, 0
     while bestScore < objective and runIter < 5:
         if runIter == 0:
-            initRun = init_process(path, basename, initRun, pool, threshold, length, bestScore, seqpb , seqaa, start, end, maskio)
+            initRun = init_process(path, basename, initRun, pool, threshold, length, bestScore, seqpb , seqaa, mask_start, mask_end, mask_status)
             bestScore = max(initRun['zScore'].to_list())
         elif runIter == 1:
             sequences = initRun['sequence'].to_list()
-            newRun = following_processes(path, basename, newRun, runIter, sequences, bestScore, seqpb, start, end, maskio)
+            newRun = following_processes(path, basename, newRun, runIter, sequences, bestScore, seqpb, mask_start, mask_end, mask_status)
             bestScore = max(initRun['zScore'].to_list())
             print(newRun)
         else:
             sequences = newRun['sequence'].to_list()
-            newRun = following_processes(path, basename, newRun, runIter, sequences, bestScore, seqpb, start, end, maskio)
+            newRun = following_processes(path, basename, newRun, runIter, sequences, bestScore, seqpb, mask_start, mask_end, mask_status)
             bestScore = max(newRun['zScore'].to_list())
             print(newRun)
         runIter += 1
@@ -442,4 +445,4 @@ if __name__ == "__main__":
     
     print_results(runIter, elapsed, bestScore)
 
-    sys.exit(app.exec())
+    

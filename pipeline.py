@@ -45,7 +45,6 @@ from joblib import Parallel, delayed    # Parallelization process
 from tqdm import tqdm                   # Progress Bar
 from tqdm_joblib import tqdm_joblib     # Progress Bar for parallel execution
 
-#import forsa                            #SWIG module from c
 
 # ---------------------------------------------------------------------------- #
 #                                   Functions                                  #
